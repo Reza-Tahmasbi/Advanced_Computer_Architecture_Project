@@ -1,0 +1,8 @@
+{
+  "functional_units": {
+    "ALU": {"count": 2, "latency": 2},
+    "MULT": {"count": 1, "latency": 10},
+    "LOAD_STORE": {"count": 1, "latency": 2}
+  },
+  "registers": ["R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10"]
+}
