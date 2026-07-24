@@ -9,6 +9,7 @@ class Scoreboard:
         self.instruction_status: Dict[int, str] = {}
         self.fu_status: Dict[str, Dict] = {}
         self.register_result: Dict[str, Optional[str]] = {reg: None for reg in config.get("registers", [])}
+        self._state_history: List[Dict] = []  # NEW
         
         self._init_fu_status()
         for instr in instructions:
@@ -31,9 +32,38 @@ class Scoreboard:
                 print("Safety limit reached")
                 break
             self.print_state(self.cycle)
+            # NEW: capture state after each cycle
+            self._state_history.append(self._get_state_snapshot())
         self._update_instruction_cycles()
         print(f"Scoreboard simulation finished in {self.cycle} cycles.")
         self.print_timing_table()
+
+    def _get_state_snapshot(self) -> Dict:
+        """Return current state for the frontend."""
+        instr_status = {}
+        for instr in self.instructions:
+            stage = "Not Issued"
+            if instr.issue_cycle:
+                stage = "Issued"
+            if instr.read_operands_cycle:
+                stage = "RO"
+            if instr.exec_start_cycle:
+                stage = "EX"
+            if instr.writeback_cycle:
+                stage = "WB"
+            instr_status[f"I{instr.id}"] = f"{instr.op}:{stage}"
+        
+        fu_status = {name: status["busy"] for name, status in self.fu_status.items()}
+        
+        return {
+            "cycle": self.cycle,
+            "instructions": instr_status,
+            "functional_units": fu_status,
+            "register_result": self.register_result.copy()
+        }
+
+    def get_state_history(self) -> List[Dict]:
+        return self._state_history
 
     def _issue_stage(self):
         for instr in self.instructions:
@@ -76,7 +106,6 @@ class Scoreboard:
                 continue
             if self.cycle >= instr.exec_start_cycle + instr.latency - 1:
                 instr.writeback_cycle = self.cycle
-                # Free FU
                 for status in self.fu_status.values():
                     if status["fi"] == instr.dest:
                         status["busy"] = False
@@ -96,7 +125,6 @@ class Scoreboard:
             if instr.writeback_cycle is None:
                 instr.writeback_cycle = instr.exec_start_cycle + instr.latency
 
-    # Helper methods (same as before)
     def _find_free_fu(self, fu_type):
         for name, status in self.fu_status.items():
             if name.startswith(fu_type) and not status["busy"]:
@@ -126,8 +154,7 @@ class Scoreboard:
         print(f"Total cycles: {self.cycle}")
         for instr in self.instructions:
             print(instr)
-            
-    
+
     def print_timing_table(self):
         print("\n=== SCOREBOARD TIMING TABLE ===")
         print(f"{'ID':<4} {'Op':<8} {'Issue':<6} {'RO':<6} {'EX':<8} {'WB':<6}")
@@ -137,11 +164,19 @@ class Scoreboard:
             ex = instr.exec_start_cycle if instr.exec_start_cycle is not None else '-'
             wb = instr.writeback_cycle if instr.writeback_cycle is not None else '-'
             print(f"I{instr.id:<3} {instr.op:<8} {issue:<6} {ro:<6} {ex:<8} {wb:<6}")
-            
+
     def print_state(self, cycle):
         print(f"\n--- Cycle {cycle} (Scoreboard) ---")
         print("Instruction Status:")
         for instr in self.instructions:
-            stage = "Issued" if instr.issue_cycle else "Not Issued"
+            stage = "Not Issued"
+            if instr.issue_cycle:
+                stage = "Issued"
+            if instr.read_operands_cycle:
+                stage = "RO"
+            if instr.exec_start_cycle:
+                stage = "EX"
+            if instr.writeback_cycle:
+                stage = "WB"
             print(f"  I{instr.id} {instr.op}: {stage}")
         print("FU Status:", {name: status["busy"] for name, status in self.fu_status.items()})

@@ -1,0 +1,1 @@
+{"name":"My Custom Scenario","mode":"Scoreboard","instructions":"LOAD R1 0(R2)\nMUL R3 R1 R4\nADD R5 R3 R6\nSUB R7 R8 R9\nADD R10 R7 R1\nSTORE R10 4(R2)","config":{"functional_units":{"ALU":2,"MULT":1,"LOAD_STORE":1},"latencies":{"ALU":2,"MULT":10,"LOAD_STORE":2}}}
