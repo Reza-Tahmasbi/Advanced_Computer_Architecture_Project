@@ -508,4 +508,4 @@ All rights reserved.
 
 # 📬 Contact
 
-For questions, bug reports, or suggestions, please contact the author through the course platform.
+For questions, bug reports, or suggestions, please contact the author through mailing: rezatahmasbi@aut.ac.ir
